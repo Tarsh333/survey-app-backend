@@ -5,6 +5,9 @@ const SurveySchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true
     },
+    userName:{
+        type:String
+    },
     title:{
         type:String
     },
@@ -14,7 +17,9 @@ const SurveySchema = new mongoose.Schema({
     questions: {
         type: mongoose.Schema.Types.Mixed,
         required: true,
-        unique: true
+    },
+    link:{
+        type:String
     }
 });
 

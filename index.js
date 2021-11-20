@@ -28,6 +28,7 @@ const auth = async (req, res, next) => {
 
     req.email = decodedData?.email;
     req.id = decodedData?.id
+    req.name=decodedData?.name
     next();
   } catch (error) {
     console.log(error);
@@ -45,7 +46,7 @@ app.post('/signup', async (req, res) => {
     else {
       const hashedPassword = await bcrypt.hash(password, 12);
       const newUser = await User.create({ name, email, address, phone, password: hashedPassword, userLevel })
-      const token = jwt.sign({ email: newUser.email, id: newUser._id, following: newUser.following }, secret, { expiresIn: "3650d" });
+      const token = jwt.sign({ email: newUser.email, id: newUser._id, name: newUser.name }, secret, { expiresIn: "3650d" });
       res.status(201).json({ id: newUser._id, token,following: newUser.following });
 
     }
@@ -70,7 +71,7 @@ app.post('/signin', async (req, res) => {
 
     if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ email: oldUser.email, id: oldUser._id }, secret, { expiresIn: "3650d" });
+    const token = jwt.sign({ email: oldUser.email, id: oldUser._id ,name:oldUser.name}, secret, { expiresIn: "3650d" });
 
     res.status(200).json({ id: oldUser._id, following: oldUser.following, token });
   } catch (err) {
@@ -79,11 +80,11 @@ app.post('/signin', async (req, res) => {
 })
 
 app.post('/add-survey', auth, async (req, res) => {
-  console.log(req.body);
-  const { survey, title, desc, link } = req.body
   // console.log(req.body);
+  const { survey, title, desc, link } = req.body
+  console.log(req.name);
   try {
-    const newSurvey = await Survey.create({ userId: req.id, questions: survey, description: desc, title, link })
+    const newSurvey = await Survey.create({ userId: req.id, questions: survey, description: desc, title, link,userName:req.name })
     res.status(201).json({ newSurvey });
   } catch (error) {
     console.log(error);
@@ -123,7 +124,6 @@ app.post('/follow', auth, async (req, res) => {
   }
 })
 app.get('/surveys',auth,async(req,res)=>{
-  console.log(req.body);
   try {
     const user=await User.findOne({email:req.email})
     // console.log(user.following);
