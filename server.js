@@ -8,9 +8,6 @@ import cors from 'cors'
 import Survey from './Models/Survey.js';
 const app = express()
 dotenv.config()
-mongoose.connect(process.env.CONNECTION_URL, {
-  useNewUrlParser: true, useUnifiedTopology: true
-})
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 app.use(cors())
@@ -135,5 +132,9 @@ app.get('/surveys',auth,async(req,res)=>{
     res.status(500).json({ error })
   }
 })
-const port =process.env.PORT || 5000
-app.listen(port, () => console.log(`App listening on port ${port}!`));
+const PORT =process.env.PORT || 5000
+mongoose.connect(process.env.CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => app.listen(PORT, () => console.log(`Server Running on Port: ${PORT}`)))
+  .catch((error) => console.log(`${error} did not connect`));
+
+mongoose.set('useFindAndModify', false);
