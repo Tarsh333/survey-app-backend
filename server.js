@@ -25,7 +25,7 @@ const auth = async (req, res, next) => {
 
     req.email = decodedData?.email;
     req.id = decodedData?.id
-    req.name=decodedData?.name
+    req.name = decodedData?.name
     next();
   } catch (error) {
     console.log(error);
@@ -44,7 +44,7 @@ app.post('/signup', async (req, res) => {
       const hashedPassword = await bcrypt.hash(password, 12);
       const newUser = await User.create({ name, email, address, phone, password: hashedPassword, userLevel })
       const token = jwt.sign({ email: newUser.email, id: newUser._id, name: newUser.name }, secret, { expiresIn: "3650d" });
-      res.status(201).json({ id: newUser._id, token,following: newUser.following });
+      res.status(201).json({ id: newUser._id, token, following: newUser.following });
 
     }
   } catch (error) {
@@ -68,7 +68,7 @@ app.post('/signin', async (req, res) => {
 
     if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ email: oldUser.email, id: oldUser._id ,name:oldUser.name}, secret, { expiresIn: "3650d" });
+    const token = jwt.sign({ email: oldUser.email, id: oldUser._id, name: oldUser.name }, secret, { expiresIn: "3650d" });
 
     res.status(200).json({ id: oldUser._id, following: oldUser.following, token });
   } catch (err) {
@@ -79,9 +79,9 @@ app.post('/signin', async (req, res) => {
 app.post('/add-survey', auth, async (req, res) => {
   // console.log(req.body);
   const { survey, title, desc, link } = req.body
-  console.log(req.name);
+  // console.log(req.name);
   try {
-    const newSurvey = await Survey.create({ userId: req.id, questions: survey, description: desc, title, link,userName:req.name })
+    const newSurvey = await Survey.create({ userId: req.id, questions: survey, description: desc, title, link, userName: req.name })
     res.status(201).json({ newSurvey });
   } catch (error) {
     console.log(error);
@@ -99,10 +99,10 @@ app.get('/members', auth, async (req, res) => {
   }
 })
 app.post('/unfollow', auth, async (req, res) => {
-  console.log("unfollow");
+  // console.log("unfollow");
   try {
-    const newUser = await User.updateOne({email:req.email}, { $pull: { following: { $in: req.body.id } } })
-    res.status(201).json({ success:"success" });
+    const newUser = await User.updateOne({ email: req.email }, { $pull: { following: { $in: req.body.id } } })
+    res.status(201).json({ success: "success" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error })
@@ -110,29 +110,48 @@ app.post('/unfollow', auth, async (req, res) => {
 })
 app.post('/follow', auth, async (req, res) => {
   // console.log(req.body);
-  console.log("follow");
+  // console.log("follow");
   try {
-    const newUser = await User.updateOne({email:req.email}, { $push: { following: req.body.id } })
+    const newUser = await User.updateOne({ email: req.email }, { $push: { following: req.body.id } })
     // console.log(newUser);
-    res.status(201).json({ success:"success" });
+    res.status(201).json({ success: "success" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error })
   }
 })
-app.get('/surveys',auth,async(req,res)=>{
+app.get('/surveys', auth, async (req, res) => {
   try {
-    const user=await User.findOne({email:req.email})
+    const user = await User.findOne({ email: req.email })
     // console.log(user.following);
-    const surveys=await Survey.find({userId:{$in:[...user.following]}})
+    const surveys = await Survey.find({ userId: { $in: [...user.following] } })
     // console.log(surveys);
-    res.status(201).json({ surveys});
+    res.status(201).json({ surveys });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error })
   }
 })
-const PORT =process.env.PORT || 5000
+app.get('/member/query', auth, async (req, res) => {
+  // console.log(req.query);
+  const { name } = req.query
+  const nameRegEx = new RegExp(`${name}`, "gi")
+  // console.log(nameRegEx);
+  try {
+    const users = await User.find(
+      {
+        name: { $regex: nameRegEx },
+        userLevel:1
+      }
+    )
+    // console.log(users);
+    res.status(201).json({ users });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error })
+  }
+})
+const PORT = process.env.PORT || 5000
 mongoose.connect(process.env.CONNECTION_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => app.listen(PORT, () => console.log(`Server Running on Port: ${PORT}`)))
   .catch((error) => console.log(`${error} did not connect`));
