@@ -66,7 +66,7 @@ app.post('/signin', async (req, res) => {
 
     const isPasswordCorrect = await bcrypt.compare(password, oldUser.password);
 
-    if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isPasswordCorrect) return res.status(400).json({ message: "Email and password do not match" });
 
     const token = jwt.sign({ email: oldUser.email, id: oldUser._id, name: oldUser.name }, secret, { expiresIn: "3650d" });
 
@@ -78,10 +78,10 @@ app.post('/signin', async (req, res) => {
 
 app.post('/add-survey', auth, async (req, res) => {
   // console.log(req.body);
-  const { survey, title, desc, link } = req.body
+  const { survey, title, desc, link ,tags} = req.body
   // console.log(req.name);
   try {
-    const newSurvey = await Survey.create({ userId: req.id, questions: survey, description: desc, title, link, userName: req.name })
+    const newSurvey = await Survey.create({ userId: req.id, questions: survey, description: desc, title, link, tags })
     res.status(201).json({ newSurvey });
   } catch (error) {
     console.log(error);
@@ -146,6 +146,19 @@ app.get('/member/query', auth, async (req, res) => {
     )
     // console.log(users);
     res.status(201).json({ users });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error })
+  }
+})
+app.get('/survey/query', auth, async (req, res) => {
+  // console.log(req.query);
+  const { name } = req.query
+  // console.log(nameRegEx);
+  try {
+    const title = new RegExp(name, "i");
+    const surveys = await Survey.find({ $or: [ { title }, { tags: { $in: [title] } } ]});
+    res.status(201).json({ surveys });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error })
